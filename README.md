@@ -1,12 +1,33 @@
-# React + Vite
+# VPD Quiz App
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+[Live Demo](https://arveksveden.github.io/quiz_app/)
 
-Currently, two official plugins are available:
+An interactive quiz app for exam preparation in Information Security.  
+Practice, track your mistakes, and learn in blocks with local progress tracking.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+---
 
-## Expanding the ESLint configuration
+## Features
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+- **Exam Mode**: All questions, full run with stats
+- **Random Blocks**: 10/20/50/100 questions
+- **Difficult Questions**: Focus on mistakes
+- **Learning Mode**: Study in blocks, see progress
+
+---
+
+## Tech Stack
+
+- React + Vite
+- Tailwind CSS
+- gh-pages for deployment
+
+---
+
+## Usage
+
+```bash
+npm install
+npm run dev         # Run locally
+npm run build
+npm run deploy      # Deploy to GitHub Pages
