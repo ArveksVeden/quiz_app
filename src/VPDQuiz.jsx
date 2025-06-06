@@ -430,7 +430,7 @@ export default function VPDQuiz({ questions }) {
       {q.image && (
         <div className="question-image">
           <img
-            src={q.image}
+            src={`${import.meta.env.BASE_URL}${q.image.replace(/^\//, '')}`}
             alt="изображение к вопросу"
             style={{ maxWidth: "100%", margin: "1rem auto", display: "block" }}
           />
