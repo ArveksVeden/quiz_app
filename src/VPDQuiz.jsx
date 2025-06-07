@@ -1,5 +1,48 @@
 import { useState, useEffect, useRef } from "react";
 
+// Fisher-Yates shuffle
+    function shuffleArray(array) {
+      const arr = array.slice();
+      for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+      }
+      return arr;
+    }
+
+    function shuffleQuestionOptions(question) {
+      // Для одного ответа
+      if (Array.isArray(question.answers)) {
+        // Несколько правильных ответов (мультиселект)
+        const indices = question.options.map((_, idx) => idx);
+        const shuffledIndices = shuffleArray(indices);
+
+        // Сопоставляем новые опции
+        const newOptions = shuffledIndices.map(idx => question.options[idx]);
+        // Новые индексы правильных ответов
+        const newAnswers = question.answers.map(
+          ansIdx => shuffledIndices.indexOf(ansIdx)
+        );
+        return {
+          ...question,
+          options: newOptions,
+          answers: newAnswers
+        };
+      } else {
+        // Обычный вопрос с одним правильным ответом
+        const indices = question.options.map((_, idx) => idx);
+        const shuffledIndices = shuffleArray(indices);
+
+        const newOptions = shuffledIndices.map(idx => question.options[idx]);
+        const newAnswer = shuffledIndices.indexOf(question.answer);
+
+        return {
+          ...question,
+          options: newOptions,
+          answer: newAnswer
+        };
+      }
+    }
 
 export default function VPDQuiz({ questions }) {
   const [quiz, setQuiz] = useState([]);
@@ -29,9 +72,12 @@ export default function VPDQuiz({ questions }) {
         questions.forEach((q, idx) => q.id = idx);
       }
 
+      // Используем перемешанные вопросы!
       if (limit !== null && mode === "quiz") {
         const shuffled = [...questions].sort(() => 0.5 - Math.random());
-        setQuiz(shuffled.slice(0, limit));
+        // Перемешайте опции каждого вопроса
+        const randomized = shuffled.slice(0, limit).map(q => shuffleQuestionOptions(q));
+        setQuiz(randomized);
         setCurrent(0);
         setSelected([]);
         setIsCorrect(null);
@@ -45,7 +91,8 @@ export default function VPDQuiz({ questions }) {
           setQuiz([]);
         } else {
           const shuffled = [...hardest].sort(() => 0.5 - Math.random());
-          setQuiz(shuffled);
+          const randomized = shuffled.map(q => shuffleQuestionOptions(q));
+          setQuiz(randomized);
           setCurrent(0);
           setSelected([]);
           setIsCorrect(null);
@@ -54,13 +101,15 @@ export default function VPDQuiz({ questions }) {
       }
 
       if (mode === "final") {
-        setQuiz([...questions]); // без перемешивания
+        // Тут тоже надо перемешать options у каждого вопроса
+        const randomized = questions.map(q => shuffleQuestionOptions(q));
+        setQuiz(randomized); // без перемешивания массива вопросов, только options
         setCurrent(0);
         setSelected([]);
         setIsCorrect(null);
         setCompleted(false);
       }
-    }, [limit, mode, questions, wrongCountsLoaded]); // Добавь wrongCountsLoaded!
+    }, [limit, mode, questions, wrongCountsLoaded]);
 
 
     // 3. Загрузка wrongCounts из localStorage при старте
