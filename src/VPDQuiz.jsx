@@ -185,8 +185,6 @@ export default function VPDQuiz({ questions }) {
   }, [
     answerSubmitted,
     selected,
-    submitAnswer,
-    next,
     mode,
     selectedBlock,
     completed,
@@ -510,6 +508,8 @@ export default function VPDQuiz({ questions }) {
   }
 
   const q = mode === "learn" ? learnBlock[learnIndex] : quiz[current];
+  if (!q) return <div className="quiz-container">Загрузка вопросов...</div>;
+
   const correctAnswerText = isMultiple(q)
     ? q.answers.map((i) => q.options[i]).join(", ")
     : q.options[q.answer];
