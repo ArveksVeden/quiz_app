@@ -157,6 +157,43 @@ export default function VPDQuiz({ questions }) {
     }
   }, [mode, selectedBlock]);
 
+  useEffect(() => {
+    function handleKeyDown(e) {
+      if (
+        mode === "menu" ||
+        (mode === "learn" && selectedBlock === null) ||
+        completed ||
+        noDifficult
+      ) {
+        return;
+      }
+      if (e.key === "Enter") {
+        if (!answerSubmitted && selected.length > 0) {
+          submitAnswer();
+        }
+      }
+      if (
+        (e.key === "ArrowRight" || e.key.toLowerCase() === "d") &&
+        answerSubmitted
+      ) {
+        next();
+      }
+    }
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [
+    answerSubmitted,
+    selected,
+    submitAnswer,
+    next,
+    mode,
+    selectedBlock,
+    completed,
+    noDifficult,
+  ]);
+
+
   function splitIntoBlocks(arr, size) {
     const res = [];
     for (let i = 0; i < arr.length; i += size) {
