@@ -64,7 +64,10 @@ export default function VPDQuiz({ questions }) {
   const [answerSubmitted, setAnswerSubmitted] = useState(false);
   const [blockSize, setBlockSize] = useState(10); // размер блока
   const [selectedBlock, setSelectedBlock] = useState(null); // индекс выбранного блока
+  const [menuIndex, setMenuIndex] = useState(0);
 
+
+    
     // 1. Основная логика загрузки вопросов по режимам
     useEffect(() => {
       // Добавляем id каждому вопросу (один раз)
@@ -159,24 +162,60 @@ export default function VPDQuiz({ questions }) {
 
   useEffect(() => {
     function handleKeyDown(e) {
+      // Меню
+      if (mode === "menu") {
+        if (e.key === "ArrowDown") {
+          setMenuIndex(idx => (idx + 1) % menuOptions.length);
+          e.preventDefault();
+        }
+        if (e.key === "ArrowUp") {
+          setMenuIndex(idx => (idx - 1 + menuOptions.length) % menuOptions.length);
+          e.preventDefault();
+        }
+        if (e.key === "Enter") {
+          menuOptions[menuIndex].onClick();
+          e.preventDefault();
+        }
+        return;
+      }
+      // Вопросы
       if (
-        mode === "menu" ||
         (mode === "learn" && selectedBlock === null) ||
         completed ||
         noDifficult
       ) {
         return;
       }
-      if (e.key === "Enter") {
-        if (!answerSubmitted && selected.length > 0) {
+
+      if (["quiz", "final", "difficult", "learn"].includes(mode) && !answerSubmitted && q) {
+        if (e.key === "ArrowDown") {
+          setSelected(prev => {
+            let idx = prev.length ? prev[prev.length - 1] : 0;
+            idx = (idx + 1) % q.options.length;
+            return [idx];
+          });
+          e.preventDefault();
+        }
+        if (e.key === "ArrowUp") {
+          setSelected(prev => {
+            let idx = prev.length ? prev[prev.length - 1] : 0;
+            idx = (idx - 1 + q.options.length) % q.options.length;
+            return [idx];
+          });
+          e.preventDefault();
+        }
+        if (e.key === "Enter" && selected.length > 0) {
           submitAnswer();
+          e.preventDefault();
         }
       }
+
       if (
-        (e.key === "ArrowRight" || e.key.toLowerCase() === "d") &&
+        (e.key === "ArrowRight" || e.key.toLowerCase() === "d" || e.key === "Enter") &&
         answerSubmitted
       ) {
         next();
+        e.preventDefault();
       }
     }
 
@@ -189,7 +228,11 @@ export default function VPDQuiz({ questions }) {
     selectedBlock,
     completed,
     noDifficult,
+    menuIndex,
+    menuOptions,
+    q
   ]);
+
 
 
   function splitIntoBlocks(arr, size) {
@@ -211,12 +254,11 @@ export default function VPDQuiz({ questions }) {
   // eslint-disable-next-line
   }, [mode, selectedBlock, blockSize, questions]);
 
+  const q = mode === "learn" ? learnBlock[learnIndex] : quiz[current]; // <-- ВОТ ЗДЕСЬ!
 
   const isMultiple = (q) => Array.isArray(q.answers);
 
   const handleAnswer = (index) => {
-    const q = mode === "learn" ? learnBlock[learnIndex] : quiz[current];
-
     if (answerSubmitted) return; // блокируем выбор после проверки
 
     if (isMultiple(q)) {
@@ -232,7 +274,6 @@ export default function VPDQuiz({ questions }) {
 
 
   const submitAnswer = () => {
-    const q = mode === "learn" ? learnBlock[learnIndex] : quiz[current];
     const correct = isMultiple(q)
       ? arraysEqualIgnoreOrder(selected, q.answers)
       : selected[0] === q.answer;
@@ -384,6 +425,44 @@ export default function VPDQuiz({ questions }) {
     input.click();
   };
 
+  const menuOptions = [
+    {
+      label: "🧪 Финальный прогон",
+      onClick: () => { setLimit(questions.length); setMode("final"); }
+    },
+    ...[10, 20, 50, 100].map(n => ({
+      label: `${n} вопросов`,
+      onClick: () => { setLimit(n); setMode("quiz"); }
+    })),
+    {
+      label: "📌 Часто ошибочные вопросы",
+      onClick: () => setMode("difficult")
+    },
+    {
+      label: "📚 Режим заучивания",
+      onClick: () => setMode("learn")
+    },
+    {
+      label: "📤 Экспорт статистики",
+      onClick: handleExport
+    },
+    {
+      label: "📥 Импорт статистики",
+      onClick: handleImport
+    },
+    {
+      label: "🧹 Сбросить статистику",
+      onClick: () => {
+        if (confirm("Вы уверены, что хотите сбросить всю статистику?")) {
+          setAttempts([]);
+          setWrongCounts({});
+          localStorage.removeItem("quizAttempts");
+          localStorage.removeItem("quizWrongCounts");
+        }
+      }
+    }
+  ];
+
 
   if (mode === "menu") {
     return (
@@ -391,42 +470,19 @@ export default function VPDQuiz({ questions }) {
         <div style={{ flex: 1 }}>
           <h2 className="question-title">Выберите режим:</h2>
           <div className="answers" style={{ display: "flex", flexDirection: "column", gap: "0.5rem", alignItems: "flex-start" }}>
-            <button onClick={() => {
-              setLimit(questions.length);
-              setMode("final");
-            }}>
-              🧪 Финальный прогон
-            </button>
-            {[10, 20, 50, 100].map((n) => (
-              <button key={n} onClick={() => { setLimit(n); setMode("quiz"); }}>
-                {n} вопросов
+            {menuOptions.map((opt, idx) => (
+              <button
+                key={opt.label}
+                onClick={opt.onClick}
+                className={menuIndex === idx ? "selected" : ""}
+                style={{
+                  background: menuIndex === idx ? "#D7ECFF" : undefined,
+                  fontWeight: menuIndex === idx ? "bold" : undefined,
+                }}
+              >
+                {opt.label}
               </button>
             ))}
-            <button onClick={() => setMode("difficult")}>
-              📌 Часто ошибочные вопросы
-            </button>
-
-            <button onClick={() => setMode("learn")}>
-              📚 Режим заучивания
-            </button>
-
-            <button onClick={handleExport}>
-              📤 Экспорт статистики
-            </button>
-            <button onClick={handleImport}>
-              📥 Импорт статистики
-            </button>
-
-            <button onClick={() => {
-              if (confirm("Вы уверены, что хотите сбросить всю статистику?")) {
-                setAttempts([]);
-                setWrongCounts({});
-                localStorage.removeItem("quizAttempts");
-                localStorage.removeItem("quizWrongCounts");
-              }
-            }}>
-              🧹 Сбросить статистику
-            </button>
           </div>
         </div>
 
@@ -507,7 +563,6 @@ export default function VPDQuiz({ questions }) {
     );
   }
 
-  const q = mode === "learn" ? learnBlock[learnIndex] : quiz[current];
   if (!q) return <div className="quiz-container">Загрузка вопросов...</div>;
 
   const correctAnswerText = isMultiple(q)
@@ -533,32 +588,31 @@ export default function VPDQuiz({ questions }) {
       <div className="answers">
         {q.options.map((opt, idx) => {
           const selectedThis = selected.includes(idx);
-          const correct = answerSubmitted && selectedThis && (
-            (isMultiple(q) && q.answers.includes(idx)) ||
-            (!isMultiple(q) && q.answer === idx)
-          );
-          const wrong = answerSubmitted && selectedThis && !correct;
-
+          // выделяем, если выбран только один и это он
+          const isFocused = selected.length === 1 && selected[0] === idx;
           let className = "";
           if (answerSubmitted) {
-            if (correct) className = "correct";
-            else if (wrong) className = "wrong";
+            if ((isMultiple(q) && q.answers.includes(idx)) ||
+                (!isMultiple(q) && q.answer === idx)) {
+              if (selectedThis) className = "correct";
+            } else if (selectedThis) className = "wrong";
           } else if (selectedThis) {
             className = "selected";
           }
-
           return (
             <button
               key={idx}
               onClick={() => handleAnswer(idx)}
               disabled={answerSubmitted}
               className={className}
+              style={isFocused ? { outline: "2px solid #3498db" } : undefined}
             >
               {opt}
             </button>
           );
         })}
       </div>
+
 
       {isCorrect !== null && (
         <div className="feedback" style={{ marginTop: "1rem", fontWeight: "bold", fontSize: "1.2em" }}>
