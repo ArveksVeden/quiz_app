@@ -178,11 +178,13 @@ export default function VPDQuiz({ questions }) {
         }
         return;
       }
+
       // Вопросы
       if (
         (mode === "learn" && selectedBlock === null) ||
         completed ||
-        noDifficult
+        noDifficult ||
+        !q // <---- ДОБАВЬ ВОТ ЭТУ ПРОВЕРКУ!
       ) {
         return;
       }
@@ -232,6 +234,7 @@ export default function VPDQuiz({ questions }) {
     menuOptions,
     q
   ]);
+
 
 
 
