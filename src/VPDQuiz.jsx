@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 
 // Fisher-Yates shuffle
     function shuffleArray(array) {
@@ -166,8 +166,16 @@ export default function VPDQuiz({ questions }) {
   }
   const blocks = splitIntoBlocks(questions, blockSize);
 
-  // Только в learn-режиме!
-  const learnBlock = (mode === "learn" && selectedBlock !== null) ? blocks[selectedBlock] : [];
+  // 👇 Вот это - новый вариант learnBlock (с useMemo)!
+  const learnBlock = useMemo(() => {
+    if (mode === "learn" && selectedBlock !== null) {
+      // Для выбранного блока — перемешиваем варианты в каждом вопросе
+      return blocks[selectedBlock].map(q => shuffleQuestionOptions(q));
+    }
+    return [];
+  // eslint-disable-next-line
+  }, [mode, selectedBlock, blockSize, questions]);
+
 
   const isMultiple = (q) => Array.isArray(q.answers);
 
